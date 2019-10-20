@@ -25,13 +25,13 @@ parseHex :: String -> Int
 parseHex hex = foldl' f 0 hex where
     f n c = 16*n + hexChar c
 
---get index of asterix char *, ascii 42
-indexOfAsterix :: [Int]->Int
-indexOfAsterix xs = fromMaybe (-1) $ elemIndex 42 xs
+--get index of  asterisk char *, ascii 42
+indexOfAsterisk :: [Int]->Int
+indexOfAsterisk xs = fromMaybe (-1) $ elemIndex 42 xs
 
 --cut list at *
-cutListAsterix :: [Int]->[Int]
-cutListAsterix xs = take (indexOfAsterix xs) xs
+cutListAsterisk :: [Int]->[Int]
+cutListAsterisk xs = take (indexOfAsterisk xs) xs
 
 --calculate  line checksum
 calculate_GPGGA_checksum :: [Int]->Int
@@ -42,11 +42,11 @@ calculate_GPGGA_checksum (x:xs) | x == 41 = 0
 
 --calculate checksum from line string
 str_GPGGA_checksum :: [Char]->Int
-str_GPGGA_checksum xs = calculate_GPGGA_checksum $ cutListAsterix $ stringToIntList xs
+str_GPGGA_checksum xs = calculate_GPGGA_checksum $ cutListAsterisk $ stringToIntList xs
 
 --get sublist containg reported checksum
 get_reported_checksum_subList :: [Char]->[Char]
-get_reported_checksum_subList xs = [xs!!((indexOfAsterix $ stringToIntList xs)+1), xs!!((indexOfAsterix $ stringToIntList xs)+2)] 
+get_reported_checksum_subList xs = [xs!!((indexOfAsterisk $ stringToIntList xs)+1), xs!!((indexOfAsterisk $ stringToIntList xs)+2)] 
 
 --get reported checksum value from GPGGA line
 get_reported_checksum :: [Char]->Int
