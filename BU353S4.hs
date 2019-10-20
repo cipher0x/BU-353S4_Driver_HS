@@ -1,0 +1,82 @@
+import qualified Data.ByteString.Char8 as B
+import System.IO
+import System.Hardware.Serialport
+import Control.Monad.Loops
+import Control.Monad
+import Data.Maybe
+import Data.Char
+import Data.List
+import Data.Bits
+
+-- TO DO, make sure string contains '*' and two hex digits afterwards before passing to parseHex
+--  create data type / type class and return it or maby use tuples?
+
+stringToIntList :: String -> [Int]
+stringToIntList line
+  | ((>2) . length) line = map ord line
+  | otherwise = []
+
+--convert ascii char to hex value
+hexChar :: Char -> Int
+hexChar ch = fromMaybe (error $ "illegal char " ++ [ch]) $ elemIndex ch "0123456789ABCDEF"
+
+--convert hex string to int
+parseHex :: String -> Int
+parseHex hex = foldl' f 0 hex where
+    f n c = 16*n + hexChar c
+
+--get index of asterix char *, ascii 42
+indexOfAsterix :: [Int]->Int
+indexOfAsterix xs = fromMaybe (-1) $ elemIndex 42 xs
+
+--cut list at *
+cutListAsterix :: [Int]->[Int]
+cutListAsterix xs = take (indexOfAsterix xs) xs
+
+--calculate  line checksum
+calculate_GPGGA_checksum :: [Int]->Int
+calculate_GPGGA_checksum [] = 0        
+calculate_GPGGA_checksum (x:xs) | x == 41 = 0
+                                | x /= 36 = x `xor` (calculate_GPGGA_checksum xs)
+                                | otherwise = calculate_GPGGA_checksum xs
+
+--calculate checksum from line string
+str_GPGGA_checksum :: [Char]->Int
+str_GPGGA_checksum xs = calculate_GPGGA_checksum $ cutListAsterix $ stringToIntList xs
+
+--get sublist containg reported checksum
+get_reported_checksum_subList :: [Char]->[Char]
+get_reported_checksum_subList xs = [xs!!((indexOfAsterix $ stringToIntList xs)+1), xs!!((indexOfAsterix $ stringToIntList xs)+2)] 
+
+--get reported checksum value from GPGGA line
+get_reported_checksum :: [Char]->Int
+get_reported_checksum xs = parseHex  $ get_reported_checksum_subList xs
+
+--validate GPGGA line
+validate_GPGGA_line :: [Char]->Bool
+validate_GPGGA_line xs = if get_reported_checksum xs == str_GPGGA_checksum xs then True else False
+
+--if x == 42 
+--if x /= 36 then x `xor` (calculate_GPGGA_checksum xs) else calculate_GPGGA_checksum xs
+
+get_GPGGA_line :: String -> String
+get_GPGGA_line line | "$GPGGA" `isPrefixOf` line = line
+                    | otherwise = []
+
+clean_print :: String -> IO ()
+clean_print str | str == ""  = putChar '\r'
+                | otherwise = print str
+main = do
+  let port = "/dev/ttyUSB0"  -- Linux
+  s <- hOpenSerial port defaultSerialSettings {commSpeed = CS4800,
+                                              timeout = 5000}
+                                              --- The Timeout is given in tenth of seconds. 
+                                              --- This means, that the program waits 100 ms for a
+                                              --- character, until it throws an "End of File reached" error
+  --replicateM_ 100 (hGetLine s >>= (clean_print . get_GPGGA_line))
+  ln <- hGetLine s
+  putChar '\n'
+  print(ln)
+  if validate_GPGGA_line ln then print(ln) else print("Invalid Line")
+  putChar '\n'
+  hClose s
