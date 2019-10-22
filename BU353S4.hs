@@ -54,7 +54,12 @@ get_reported_checksum xs = parseHex  $ get_reported_checksum_subList xs
 
 --validate GPGGA line
 validate_GPGGA_line :: [Char]->Bool
-validate_GPGGA_line xs = if get_reported_checksum xs == str_GPGGA_checksum xs then True else False
+validate_GPGGA_line xs = if contain_asterisk xs then if get_reported_checksum xs == str_GPGGA_checksum xs then True else False else False
+--if get_reported_checksum xs == str_GPGGA_checksum xs then True else False
+
+--conatins aserisk
+contain_asterisk :: [Char]->Bool
+contain_asterisk xs = '*' `elem` xs
 
 --if x == 42 
 --if x /= 36 then x `xor` (calculate_GPGGA_checksum xs) else calculate_GPGGA_checksum xs
@@ -66,6 +71,7 @@ get_GPGGA_line line | "$GPGGA" `isPrefixOf` line = line
 clean_print :: String -> IO ()
 clean_print str | str == ""  = putChar '\r'
                 | otherwise = print str
+
 main = do
   let port = "/dev/ttyUSB0"  -- Linux
   s <- hOpenSerial port defaultSerialSettings {commSpeed = CS4800,
@@ -75,8 +81,11 @@ main = do
                                               --- character, until it throws an "End of File reached" error
   --replicateM_ 100 (hGetLine s >>= (clean_print . get_GPGGA_line))
   ln <- hGetLine s
-  putChar '\n'
+  unless (validate_GPGGA_line ln) $ do
+  --when (not $ validate_GPGGA_line ln) $ do
   print(ln)
-  if validate_GPGGA_line ln then print(ln) else print("Invalid Line")
-  putChar '\n'
+  main
+  print("OutSide")
+  print(ln)
+  --if validate_GPGGA_line ln then print(ln) else print("Invalid Line")
   hClose s
