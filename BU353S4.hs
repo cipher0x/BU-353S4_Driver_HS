@@ -7,6 +7,7 @@ import Data.Maybe
 import Data.Char
 import Data.List
 import Data.Bits
+import Data.List.Split
 
 -- TO DO, make sure string contains '*' and two hex digits afterwards before passing to parseHex
 --  create data type / type class and return it or maby use tuples?
@@ -90,12 +91,126 @@ get_valid_line s = do --pass s into this function******************
     ln <- hGetLine s
     if validate_GPGGA_line ln then return ln else get_valid_line s 
 
+
+
+
+-------------------------------------------------------------------------------
+----------------Functions to parse valid GPGGA line----------------------------
+-------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
+
+-- @brief returns GGA - Global Positioning System fix data record type
+-- @param string of a GPGGA valid line
+-- @return string containing GGA
+get_system_fix_data :: [Char] -> [Char]
+get_system_fix_data xs = s!!0
+                    where s = splitOn "," xs
+
+-- @breif return utc time
+-- @param string of a GPGGA valid line
+-- @return string utc [hhmmss.ss]
+get_utc_time :: [Char] -> [Char]
+get_utc_time xs = s!!1
+            where s = splitOn "," xs
+
+-- @brief return Latitude
+-- @param string of a GPGGA valid line
+-- @return string latitude in the form [DDMM.MMMMMM]
+get_latitude :: [Char] -> [Char]
+get_latitude xs = s!!2
+            where s = splitOn "," xs
+
+-- @breif return  latitude direction
+-- @param string of a GPGGA valid line
+-- @return string latitude direction E: for East, W: for West
+get_latitude_direction :: [Char] -> [Char]
+get_latitude_direction xs = s!!3 
+                    where s = splitOn "," xs
+
+-- @breif return Longitude
+-- @param string of a GPGGA valid line
+-- @return string longitude in [DDDMM.MMMMMM]
+get_longitude :: [Char] -> [Char]
+get_longitude xs = s!!4
+                where s = splitOn "," xs
+
+-- @breif return Longitude direction
+-- @param string of a GPGGA valid line
+-- @return string longitutde direction, E: for East, W: for West
+get_longitude_direction :: [Char] -> [Char]
+get_longitude_direction xs = s!!5
+                        where s = splitOn "," xs
+
+-- @brief returns fix quaility
+-- @param string of a GPGGA valid line
+-- @return string of fix quiality, values below
+-- GPS Quality Indicator
+--    0: fix not available
+--    1: GPS fix
+--    2: Differential GPS fix
+--    4: Real-Time Kinematic, fixed integers
+--    5: Real-Time Kinematic, float integers
+get_fix_quaility :: [Char] -> [Char]
+get_fix_quaility xs = s!!6
+                where s = splitOn "," xs
+
+-- @brief returns Number of GPS satellites being used [0 - 12]
+-- @param string of a GPGGA valid line
+-- @return string of used gpg satellites values: [0 - 12] 
+get_tracked_satellites :: [Char] -> [Char]
+get_tracked_satellites xs = s!!7
+                        where s = splitOn "," xs
+
+-- @brief returns horizontal dilution of precision of fix
+-- @param string of a GPGGA valid line
+-- @return string dilution
+get_horizontal_dilution :: [Char] -> [Char]
+get_horizontal_dilution xs = s!!8
+                        where s = splitOn "," xs
+
+-- @brief returns altitude Above Mean Sea
+-- @param string of a GPGGA valid line
+-- @return string altitude above mean sea
+get_altitude_above_mean_sea :: [Char] -> [Char]
+get_altitude_above_mean_sea xs = s!!9
+                            where s = splitOn "," xs
+
+-- @breif returns units of altitude above mean sea
+-- @param string of a GPGGA valid line
+-- @return string of Units ex, M for meters
+get_altitude_above_mean_sea_units :: [Char] -> [Char]
+get_altitude_above_mean_sea_units xs = s!!10
+                                where s = splitOn "," xs
+
+-- @brief returns Geoidal separation , the diff between WGS-84 earth ellipsoid and mean sea geoid
+-- @param string of a GPGGA valid line
+-- @return string diff btw wgs-84 geoid and abms sea geoid
+get_height_of_geoid :: [Char] -> [Char]
+get_height_of_geoid xs = s!!11
+                    where s = splitOn "," xs
+
+-- @breif get height of geoid units
+-- @param string of a GPGGA valid line
+-- @return string of units ex, M for meters
+get_height_of_geoid_units :: [Char] -> [Char]
+get_height_of_geoid_units xs = s!!12
+                        where s = splitOn "," xs
+
+
+--function to test get functions
+test_get :: [Char] -> [Char]
+test_get xs = "Valid Line: " ++ xs ++ "\n" ++ "System Fix: " ++ get_system_fix_data xs ++ "\n" ++ "Time: " ++ get_utc_time xs ++ "\n" ++
+    "Latitude: " ++ get_latitude xs ++ " " ++ get_latitude_direction xs ++ "\n" ++ "Longitude: " ++ get_longitude xs ++ " " ++ 
+    get_longitude_direction xs ++ "\n" ++ "Fix Quality: " ++ get_fix_quaility xs ++ "\n" ++ "Tracked Satelites: " ++ get_tracked_satellites xs ++
+    "\n" ++ "Horizontal Dilution: " ++ get_horizontal_dilution xs ++ "\n" ++ "Altitude AMS: " ++ get_altitude_above_mean_sea xs ++ 
+    " " ++ get_altitude_above_mean_sea_units xs ++ "\n" ++ "Height of Geoid: " ++ get_height_of_geoid xs ++ " " ++ get_height_of_geoid_units xs ++ "\n"
+
 main :: IO ()
 main = do
   let port = "/dev/ttyUSB0"  -- Linux
   s <- hOpenSerial port defaultSerialSettings {commSpeed = CS4800, timeout = 5000}
 --  valid_line <- get_valid_line s
-  replicateM_ 100 (get_valid_line s >>= clean_print)
+  replicateM_ 100 (get_valid_line s >>= putStrLn . test_get)
   hClose s
 --  print(valid_line)
   --let port = "/dev/ttyUSB0"  -- Linux
