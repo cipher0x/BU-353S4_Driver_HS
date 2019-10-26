@@ -81,18 +81,23 @@ clean_print str | str == ""  = putChar '\r'
                 | otherwise = print str
 
 --get a valid GPGGA line
-get_valid_line :: IO String
-get_valid_line = do --pass s into this function******************
-    let port = "/dev/ttyUSB0"  -- Linux
-    s <- hOpenSerial port defaultSerialSettings {commSpeed = CS4800,
-                                                timeout = 5000}
+--get_valid_line :: IO String
+get_valid_line :: Handle -> IO String
+get_valid_line s = do --pass s into this function******************
+    --let port = "/dev/ttyUSB0"  -- Linux
+    --s <- hOpenSerial port defaultSerialSettings {commSpeed = CS4800,
+    --                                            timeout = 5000}
     ln <- hGetLine s
-    if validate_GPGGA_line ln then return ln else get_valid_line 
+    if validate_GPGGA_line ln then return ln else get_valid_line s 
 
 main :: IO ()
-main = do 
-  valid_line <- get_valid_line
-  print(valid_line)
+main = do
+  let port = "/dev/ttyUSB0"  -- Linux
+  s <- hOpenSerial port defaultSerialSettings {commSpeed = CS4800, timeout = 5000}
+--  valid_line <- get_valid_line s
+  replicateM_ 100 (get_valid_line s >>= clean_print)
+  hClose s
+--  print(valid_line)
   --let port = "/dev/ttyUSB0"  -- Linux
   --s <- hOpenSerial port defaultSerialSettings {commSpeed = CS4800,
   --                                            timeout = 5000}
