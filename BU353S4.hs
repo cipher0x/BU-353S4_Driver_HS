@@ -99,6 +99,42 @@ get_valid_line s = do --pass s into this function******************
 -------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
 
+-- GPGGA date 
+data GPGGA = GPGGA {
+                    fix_data :: [Char],
+                    utc_time :: [Char],
+                    latitude :: [Char],
+                    latitude_direction :: [Char],
+                    longitude :: [Char],
+                    longitude_direction :: [Char],
+                    fix_quaility :: [Char],
+                    tracked_satellites :: [Char],
+                    horizontal_dilution :: [Char],
+                    altitude_above_mean_sea :: [Char],
+                    altitude_above_mean_sea_units :: [Char],
+                    geight_of_geoid :: [Char],
+                    height_of_geoid_units :: [Char]
+                  } deriving (Show)
+
+-- @brief parse valid GPGGA line into GPGGA data type
+-- @param valid GPGGA line
+-- @return GPGGA data type
+parse_GPGGA_line :: [Char] -> GPGGA
+parse_GPGGA_line ln =  GPGGA {
+                                fix_data = get_system_fix_data ln,
+                                utc_time = get_utc_time ln,
+                                latitude = get_latitude ln,
+                                latitude_direction =  get_latitude_direction ln,
+                                longitude =  get_longitude ln,
+                                longitude_direction = get_longitude_direction ln,
+                                fix_quaility = get_fix_quaility ln,
+                                tracked_satellites = get_tracked_satellites ln,
+                                horizontal_dilution =  get_horizontal_dilution ln,
+                                altitude_above_mean_sea = get_altitude_above_mean_sea ln, 
+                                altitude_above_mean_sea_units = get_altitude_above_mean_sea_units ln,
+                                geight_of_geoid = get_height_of_geoid ln,
+                                height_of_geoid_units = get_height_of_geoid_units ln
+                             }
 -- @brief returns GGA - Global Positioning System fix data record type
 -- @param string of a GPGGA valid line
 -- @return string containing GGA
@@ -209,8 +245,16 @@ main :: IO ()
 main = do
   let port = "/dev/ttyUSB0"  -- Linux
   s <- hOpenSerial port defaultSerialSettings {commSpeed = CS4800, timeout = 5000}
---  valid_line <- get_valid_line s
+  
+  --test get functions
   replicateM_ 100 (get_valid_line s >>= putStrLn . test_get)
+  --
+
+--test GPGGA data type
+  valid_line <- get_valid_line s
+  replicateM_ 100 (get_valid_line s >>= print . parse_GPGGA_line )
+--
+
   hClose s
 --  print(valid_line)
   --let port = "/dev/ttyUSB0"  -- Linux
